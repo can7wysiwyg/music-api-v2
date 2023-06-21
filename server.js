@@ -6,6 +6,7 @@ const port  = process.env.PORT || 5500
 const cookieParser = require('cookie-parser')
 const path = require('path')
 const cors = require('cors')
+const AdminAuthRoute = require('./routes/AdminAuthRoute')
 
 mongoose.connect(process.env.MONGOURL)
 
@@ -25,7 +26,8 @@ db.once('open', function(){
   app.use(express.urlencoded({extended: true, limit: '50mb'}))
   app.use(cookieParser())
 
-
+  //routes
+  app.use(AdminAuthRoute)
 
 
   app.listen(port, () => {

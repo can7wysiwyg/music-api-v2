@@ -1,9 +1,9 @@
-const User = require('../models/UserModel')
+const Admin = require('../models/AdminModel')
 const asyncHandler = require('express-async-handler')
 
 const authAdmin = asyncHandler(async(req, res, next) => {
 
-    const user = await User.findOne({
+    const user = await Admin.findOne({
         _id: req.user.id
     })
 
