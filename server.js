@@ -7,6 +7,7 @@ const cookieParser = require('cookie-parser')
 const path = require('path')
 const cors = require('cors')
 const AdminAuthRoute = require('./routes/AdminAuthRoute')
+const AuthorRoute = require('./routes/AuthorRoute')
 
 mongoose.connect(process.env.MONGOURL)
 
@@ -28,6 +29,7 @@ db.once('open', function(){
 
   //routes
   app.use(AdminAuthRoute)
+  app.use(AuthorRoute)
 
 
   app.listen(port, () => {

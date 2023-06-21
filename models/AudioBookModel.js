@@ -2,8 +2,8 @@ const  mongoose = require('mongoose')
 
 const AudioSchema = mongoose.Schema({
     authorName: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Author'
+        type: String,
+        required: true
     
     },
     bookArtwork: {
