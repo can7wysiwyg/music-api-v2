@@ -5,15 +5,9 @@ const AudioSchema = mongoose.Schema({
         type: String,
         required: true
     
-    },
-    bookArtwork: {
-        type: String,
-        required: true
-
     }
     ,
-
-    bookGenre: {
+    audioGenre: {
         type: String,
         required: true
 

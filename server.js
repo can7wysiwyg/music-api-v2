@@ -8,6 +8,8 @@ const path = require('path')
 const cors = require('cors')
 const AdminAuthRoute = require('./routes/AdminAuthRoute')
 const AuthorRoute = require('./routes/AuthorRoute')
+const GenreRoute = require('./routes/GenreRoute')
+const AudioBookRoute = require('./routes/AudioBookRoute')
 
 mongoose.connect(process.env.MONGOURL)
 
@@ -30,6 +32,8 @@ db.once('open', function(){
   //routes
   app.use(AdminAuthRoute)
   app.use(AuthorRoute)
+  app.use(GenreRoute)
+  app.use(AudioBookRoute)
 
 
   app.listen(port, () => {
