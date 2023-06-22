@@ -95,5 +95,20 @@ AuthorRoute.delete('/author/delete_author/:id', verify, authAdmin, asyncHandler(
 
 }))
 
+AuthorRoute.get('/author/show_all', asyncHandler(async(req, res) => {
+
+  const authors = await Author.find()
+
+  res.json({authors})
+
+}))
+
+AuthorRoute.get('/author/show_single/:id', asyncHandler(async(req, res) => {
+
+  const result = await Author.findOne({_id: req.params.id})
+
+  res.json({result})
+
+}))
 
 module.exports = AuthorRoute;
