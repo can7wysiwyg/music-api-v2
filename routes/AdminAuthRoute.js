@@ -37,64 +37,65 @@ await Admin.create  ({
 
 AdminAuthRoute.post('/admin/login', asyncHandler(async(req, res) => {
 
+  const { email, password } = req.body;
 
-    const { email, password } = req.body;
+  const userExists = await Admin.findOne({ email }).select("+password");
 
-    const userExists = await Admin.findOne({ email }).select("+password");
+  
+  
 
-    if (!userExists) {
-      res.json({
-        msg: "No user associated with this username exists in our system. Please register.",
-      });
-    }
+  if (!userExists) {
+    res.json({
+      msg: "No user associated with this username exists in our system. Please register.",
+    });
+  }
 
-    const passwordMatch = await bcrypt.compare(password, userExists.password);
+  const passwordMatch = await bcrypt.compare(password, userExists.password);
 
-    if (passwordMatch) {
+  
 
+  if (passwordMatch) {
+    let accesstoken = createAccessToken({id: userExists._id })
+    let refreshtoken = createRefreshToken({id: userExists._id})
+
+    res.cookie('refreshtoken', refreshtoken, { expire: new Date() + 9999 });
+
+    jwt.verify(refreshtoken, process.env.REFRESH_TOKEN, (err, user) =>{
+      if(err) return res.status(400).json({msg: "Please Login or Register"})
+  
+      const accesstoken = createAccessToken({id: user.id})
       
-      
-      let accesstoken = createAccessToken({id: userExists._id })
-      let refreshtoken = createRefreshToken({id: userExists._id})
+  
+      res.json({accesstoken}) })
 
-      res.cookie('refreshtoken', refreshtoken, { expire: new Date() + 9999 });
 
-      jwt.verify(refreshtoken, process.env.REFRESH_TOKEN, (err, user) =>{
-        if(err) return res.status(400).json({msg: "Please Login or Register"})
     
-        const accesstoken = createAccessToken({id: user.id})
-        
+  } else {
+    res.json({ msg: "check your password again" });
+  } 
+
+
+
+
+
     
-        res.json({accesstoken}) })
-
-
-
-
-    } else {
-      res.json({ msg: "check your password again" });
-    }
-
-
-
 
 }))
 
-AdminAuthRoute.get('/admin/user', asyncHandler(async(req, res) => {
-    try{
-        const user = await Admin.findById(req.user).select('-password')
-        if(!user) return res.status(400).json({msg: "User does not exist."})
-      
-        res.json(user)
-      
-      
-      }
-        catch(err) {
-          return res.status(500).json({msg: err.message})
-      
-      
-        }
-      
+AdminAuthRoute.get('/admin/user', verify, asyncHandler(async(req, res) => {
+  try {
+    const user = await Admin.findById(req.user).select('-password');
 
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+   
+    res.json(user);
+  } catch (err) {
+    return res.status(500).json({ msg: err.message });
+  }
+  
 
 
 }))
