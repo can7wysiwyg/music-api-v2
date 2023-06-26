@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
     cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
   },
   fileFilter: function (req, file, cb) {
-    if (file.minetype === "audio/mp3" || file.minetype === "image/jpg") {
+    if (file.mimetype === "audio/mp3" || file.mimetype === "image/jpeg") {
       cb(null, true);
     } else {
       cb(null, false, "Invalid File formats. Upload mp3 or jpg");
@@ -61,22 +61,20 @@ AudioBookRoute.post(
       audioGenre,
       released,
       audioBook: {
-        data: fs.readFileSync(
-          "./uploads/" + req.files["audioBook"][0].filename
-        ),
-        contentType: "audio/mp3",
+        audioLink: "/uploads/" + req.files["audioBook"][0].filename,
       },
       audioImage: {
-        data: fs.readFileSync(
-          "./uploads/" + req.files["audioImage"][0].filename
-        ),
-        contentType: "image/jpg",
+        imageLink: "/uploads/" + req.files["audioImage"][0].filename,
       },
     });
 
-    res.json({ msg: "audiobook has been succesfully uploaded..." });
+    res.json({ msg: "audiobook has been successfully uploaded..." });
   })
 );
+
+
+
+
 
 AudioBookRoute.put(
   "/audio/update_audio_only/:id",
@@ -86,16 +84,53 @@ AudioBookRoute.put(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    await AudioBook.findByIdAndUpdate(id, {
-      audioBook: {
-        data: fs.readFileSync("./uploads/" + req.file.filename),
-        contentType: "audio/mp3",
-      },
-    });
+    const audioBook = await AudioBook.findById(id);
+    if (!audioBook) {
+      return res.status(404).json({ error: "AudioBook not found" });
+    }
 
-    res.json({ msg: "succesfully updated" });
+    if (req.file) {
+      // Delete the previous audio file if it exists
+      if (audioBook.audioBook && audioBook.audioBook.audioLink) {
+        const filePath = audioBook.audioBook.audioLink;
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      audioBook.audioBook = {
+        audioLink: req.file.path,
+      };
+    }
+
+    // Ensure that audioImage.imageLink is provided in the request body
+    if (req.body.audioImage && req.body.audioImage.imageLink) {
+      audioBook.audioImage = {
+        imageLink: req.body.audioImage.imageLink,
+      };
+    }
+
+    try {
+      await audioBook.save();
+      res.json({ msg: "Successfully updated" });
+    } catch (error) {
+      // Error occurred while saving the document
+      if (req.file) {
+        // Delete the newly uploaded audio file if saving failed
+        const filePath = req.file.path;
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      res.status(500).json({ error: "Failed to update audio" });
+    }
   })
 );
+
+
+
+
+
 
 AudioBookRoute.put(
   "/audio/update_picture/:id",
@@ -105,29 +140,58 @@ AudioBookRoute.put(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    await AudioBook.findByIdAndUpdate(id, {
-      audioImage: {
-        data: fs.readFileSync("./uploads/" + req.file.filename),
-        contentType: "image/jpg",
-      },
-    });
+    const audioBook = await AudioBook.findById(id);
+    if (!audioBook) {
+      return res.status(404).json({ error: "AudioBook not found" });
+    }
 
-    res.json({ msg: "photo has been succesfully updated...." });
+    if (req.file) {
+      // Delete the previous image file if it exists
+      if (audioBook.audioImage && audioBook.audioImage.imageLink) {
+        const filePath = audioBook.audioImage.imageLink;
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      audioBook.audioImage = {
+        imageLink: req.file.path,
+      };
+    }
+
+    try {
+      await audioBook.save();
+      res.json({ msg: "Photo has been successfully updated" });
+    } catch (error) {
+      // Error occurred while saving the document
+      if (req.file) {
+        // Delete the newly uploaded image file if saving failed
+        const filePath = req.file.path;
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+      res.status(500).json({ error: "Failed to update photo" });
+    }
   })
 );
 
-AudioBookRoute.put(
-  "/audio/update_text_fields/:id",
-  verify,
-  authAdmin,
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
 
-    await AudioBook.findByIdAndUpdate(id, req.body);
 
-    res.json({ msg: "fields succesfully updated" });
-  })
-);
+
+
+// AudioBookRoute.put(
+//   "/audio/update_text_fields/:id",
+//   verify,
+//   authAdmin,
+//   asyncHandler(async (req, res) => {
+//     const { id } = req.params;
+
+//     await AudioBook.findByIdAndUpdate(id, req.body);
+
+//     res.json({ msg: "fields succesfully updated" });
+//   })
+// );
 
 AudioBookRoute.delete(
   "/audio/delete_audio_book/:id",

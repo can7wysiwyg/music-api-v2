@@ -18,12 +18,18 @@ const AudioSchema = mongoose.Schema({
 
     },
     audioBook: {
-        data: Buffer,
-        contentType: String
+        audioLink: {
+            type: String,
+            required: true
+          }
     },
     audioImage: {
-       data: Buffer,
-        contentType: String  
+        imageLink: {
+            type: String,
+            required: true
+          }
+      
+        
     },
     released: {
        type: String,
