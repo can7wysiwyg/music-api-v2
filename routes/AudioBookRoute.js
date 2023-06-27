@@ -194,15 +194,24 @@ AudioBookRoute.delete(
 );
 
 AudioBookRoute.get('/audio/show_all', asyncHandler(async(req, res) => {
-    const results = await AudioBook.find()
-    res.json({results})
+    const books = await AudioBook.find()
+    res.json({books})
 }))
+
+AudioBookRoute.get('/audio/show_single/:id', asyncHandler(async(req, res) => {
+
+  const book = await AudioBook.findOne({_id: req.params.id})
+
+  res.json({book})
+
+}))
+
 
 AudioBookRoute.get('/audio/show_according_to_genre/gnr', asyncHandler(async(req, res) => {
 
- const results = await AudioBook.find({audioGenre: req.query.genre})
+ const books = await AudioBook.find({audioGenre: req.query.genre})
 
- res.json({results})
+ res.json({books})
 
 
 }))
