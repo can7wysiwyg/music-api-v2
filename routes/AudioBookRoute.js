@@ -179,20 +179,6 @@ AudioBookRoute.put(
 
 
 
-
-// AudioBookRoute.put(
-//   "/audio/update_text_fields/:id",
-//   verify,
-//   authAdmin,
-//   asyncHandler(async (req, res) => {
-//     const { id } = req.params;
-
-//     await AudioBook.findByIdAndUpdate(id, req.body);
-
-//     res.json({ msg: "fields succesfully updated" });
-//   })
-// );
-
 AudioBookRoute.delete(
   "/audio/delete_audio_book/:id",
   verify,

@@ -22,9 +22,12 @@ const AuthorSchema = mongoose.Schema({
         unique: true
     },
     AuthorImage: {
-        data: Buffer,
-        contentType: String
-
+        authorImageLink: {
+            type: String,
+            required: true
+          }
+      
+        
     }
 
 }, {

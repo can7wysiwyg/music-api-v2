@@ -28,7 +28,7 @@ AuthorRoute.post(
       req.body;
 
     if ((!AuthorName || !AuthorLocation, !AuthorEmail || !AuthorPhoneNumber))
-      res.json({ msg: "an important field is missing! please check" });
+      res.json({ msg: "An important field is missing! Please check." });
 
     await Author.create({
       AuthorName,
@@ -36,14 +36,14 @@ AuthorRoute.post(
       AuthorLocation,
       AuthorPhoneNumber,
       AuthorImage: {
-        data: fs.readFileSync("./uploads/" + req.file.filename),
-        contentType: "image/jpg",
+        authorImageLink: req.file.path, // Save the image path in the database
       },
     });
 
-    res.json({ msg: "account has been successfully created" });
+    res.json({ msg: "Account has been successfully created." });
   })
 );
+
 
 AuthorRoute.put(
   "/author/edit_profile_info/:id",
@@ -64,24 +64,37 @@ AuthorRoute.put(
   authAdmin,
   upload.single("AuthorImage"),
   asyncHandler(async (req, res) => {
-  
     const { id } = req.params;
 
-    await Author.findByIdAndUpdate(
-        id,
-        {
-            AuthorImage: {
-            data: fs.readFileSync("./uploads/" + req.file.filename),
-            contentType: "image/jpg",
-          },
-        },
-        { new: true }
-      );
-  
-      res.json({ msg: "successfully updated" });
-  
+    // Find the author in the database
+    const author = await Author.findById(id);
+
+    // Check if the author exists
+    if (!author) {
+      return res.status(404).json({ msg: "Author not found." });
+    }
+
+    // Delete the old image from the file system if it exists
+    if (author.AuthorImage && author.AuthorImage.authorImageLink) {
+      const oldImagePath = author.AuthorImage.authorImageLink;
+      fs.unlink(oldImagePath, (err) => {
+        if (err) {
+          console.error("Error deleting old image:", err);
+        }
+      });
+    }
+
+    // Update the author's profile picture in the database
+    author.AuthorImage = {
+      authorImageLink: req.file.path, // Save the new image path in the database
+    };
+
+    await author.save();
+
+    res.json({ msg: "Profile picture updated successfully." });
   })
 );
+
 
 
 AuthorRoute.delete('/author/delete_author/:id', verify, authAdmin, asyncHandler(async(req, res) => {
