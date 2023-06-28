@@ -21,6 +21,7 @@ const AuthorSchema = mongoose.Schema({
         required: true,
         unique: true
     },
+
     AuthorImage: {
         authorImageLink: {
             type: String,

@@ -31,8 +31,14 @@ const AudioSchema = mongoose.Schema({
       
         
     },
+    bookDescription: {
+    
+        type: String,
+        required: true
+
+    },
     released: {
-       type: String,
+       type: Date,
        required: true 
     }
 }, {

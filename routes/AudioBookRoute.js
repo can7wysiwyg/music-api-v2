@@ -50,9 +50,9 @@ AudioBookRoute.post(
   authAdmin,
   Fileuploads,
   asyncHandler(async (req, res) => {
-    const { authorName, audioGenre, bookTitle, released } = req.body;
+    const { authorName, audioGenre, bookTitle, released, bookDescription } = req.body;
 
-    if (!authorName || !audioGenre || !bookTitle || !released)
+    if (!authorName || !audioGenre || !bookTitle || !released || !bookDescription)
       res.json({ msg: "field cannot be empty" });
 
     await AudioBook.create({
@@ -60,6 +60,7 @@ AudioBookRoute.post(
       bookTitle,
       audioGenre,
       released,
+      bookDescription,
       audioBook: {
         audioLink: "/uploads/" + req.files["audioBook"][0].filename,
       },
@@ -127,6 +128,16 @@ AudioBookRoute.put(
   })
 );
 
+
+AudioBookRoute.put("/audio/update_all/:id", verify, authAdmin, asyncHandler(async(req, res) => {
+
+const{id} = req.params
+
+await AudioBook.findByIdAndUpdate(id, req.body)
+
+res.json({msg: "file has been updated"})
+
+}))
 
 
 
@@ -204,6 +215,13 @@ AudioBookRoute.get('/audio/show_single/:id', asyncHandler(async(req, res) => {
 
   res.json({book})
 
+}))
+
+
+AudioBookRoute.get('/audio/show_author_books/:id', asyncHandler(async(req, res) => {
+  await AudioBook.find({authorName : req.params.id }).then((books) =>
+      res.json({ books })
+    );
 }))
 
 
