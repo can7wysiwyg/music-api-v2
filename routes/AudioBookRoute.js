@@ -55,6 +55,7 @@ AudioBookRoute.post(
     if (!authorName || !audioGenre || !bookTitle || !released || !bookDescription)
       res.json({ msg: "field cannot be empty" });
 
+      
     await AudioBook.create({
       authorName,
       bookTitle,
@@ -203,6 +204,16 @@ AudioBookRoute.delete(
 
   })
 );
+
+AudioBookRoute.delete('/audio/delete_authors_all/:id', verify, authAdmin, asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  await AudioBook.deleteMany({ authorName: id });
+
+  res.json({ message: 'All records with the specified ID have been deleted.' });
+}));
+
+
 
 AudioBookRoute.get('/audio/show_all', asyncHandler(async(req, res) => {
     const books = await AudioBook.find()

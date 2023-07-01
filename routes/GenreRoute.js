@@ -53,4 +53,14 @@ GenreRoute.get('/genre/show_all', asyncHandler(async(req, res) => {
     res.json({results})
 }))
 
+
+GenreRoute.get('/genre/show_single/:id', asyncHandler(async(req, res) => {
+
+  const result = await Genre.findOne({_id: req.params.id})
+
+  res.json({result})
+
+}))
+
+
 module.exports = GenreRoute;
