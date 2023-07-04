@@ -6,6 +6,7 @@ const authAdmin = require("../middleware/authAdmin");
 const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const cloudinary = require('cloudinary')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -17,6 +18,13 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+
+cloudinary.config({ 
+  cloud_name: process.env.CLOUD_NAME , 
+  api_key: process.env.API_KEY, 
+  api_secret: process.env.API_SECRET 
+});
 
 AuthorRoute.post(
   "/author/create",
@@ -30,14 +38,15 @@ AuthorRoute.post(
     if ((!AuthorName || !AuthorLocation, !AuthorEmail || !AuthorPhoneNumber))
       res.json({ msg: "An important field is missing! Please check." });
 
+      const result = await cloudinary.uploader.upload(req.file.path);
+
+
     await Author.create({
       AuthorName,
       AuthorEmail,
       AuthorLocation,
       AuthorPhoneNumber,
-      AuthorImage: {
-        authorImageLink: req.file.path, // Save the image path in the database
-      },
+      AuthorImage: result.secure_url
     });
 
     res.json({ msg: "Account has been successfully created." });
@@ -58,6 +67,7 @@ AuthorRoute.put(
   })
 );
 
+
 AuthorRoute.put(
   "/author/update_profilePic/:id",
   verify,
@@ -74,26 +84,24 @@ AuthorRoute.put(
       return res.status(404).json({ msg: "Author not found." });
     }
 
-    // Delete the old image from the file system if it exists
-    if (author.AuthorImage && author.AuthorImage.authorImageLink) {
-      const oldImagePath = author.AuthorImage.authorImageLink;
-      fs.unlink(oldImagePath, (err) => {
-        if (err) {
-          console.error("Error deleting old image:", err);
-        }
-      });
+    // Delete the old image from Cloudinary if it exists
+    if (author.AuthorImage) {
+      const publicId = author.AuthorImage.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
     }
 
+    // Upload the new image to Cloudinary
+    const result = await cloudinary.uploader.upload(req.file.path);
+
     // Update the author's profile picture in the database
-    author.AuthorImage = {
-      authorImageLink: req.file.path, // Save the new image path in the database
-    };
+    author.AuthorImage = result.secure_url; // Save the new image URL in the database
 
     await author.save();
 
     res.json({ msg: "Profile picture updated successfully." });
   })
 );
+
 
 
 

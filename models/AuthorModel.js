@@ -23,10 +23,10 @@ const AuthorSchema = mongoose.Schema({
     },
 
     AuthorImage: {
-        authorImageLink: {
+    
             type: String,
             required: true
-          }
+          
       
         
     }
