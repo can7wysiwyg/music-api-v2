@@ -107,9 +107,13 @@ AuthorRoute.put(
 
     await author.save();
 
+    // Delete the image file from the temporary uploads folder
+    fs.unlinkSync(req.file.path);
+
     res.json({ msg: "Profile picture updated successfully." });
   })
 );
+
 
 
 

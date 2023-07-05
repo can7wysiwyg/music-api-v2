@@ -25,6 +25,7 @@ cloudinary.config({
   api_secret: process.env.API_SECRET 
 });
 
+
 AudioBookRoute.post(
   "/audio/create_audio",
   verify,
@@ -63,7 +64,9 @@ AudioBookRoute.post(
 
       await audioK.save();
 
-      
+      // Delete the audio and image files from the temporary uploads folder
+      fs.unlinkSync(audioBook[0].path);
+      fs.unlinkSync(audioImage[0].path);
 
       res.json({
         msg: "Audio and image files uploaded successfully",
@@ -75,8 +78,6 @@ AudioBookRoute.post(
     }
   })
 );
-
-
 
 
 AudioBookRoute.put(
@@ -105,6 +106,9 @@ AudioBookRoute.put(
         }
 
         audioBook.audioBook = audioBookResult.secure_url;
+
+        // Delete the audio file from the temporary uploads folder
+        fs.unlinkSync(req.file.path);
       } catch (error) {
         // Error occurred while uploading the new audio file
         console.error("Error uploading file:", error);
@@ -125,12 +129,14 @@ AudioBookRoute.put(
       if (req.file) {
         // Delete the newly uploaded audio file if saving failed
         await cloudinary.uploader.destroy(audioBook.audioBook);
+        fs.unlinkSync(req.file.path); // Delete the audio file from the temporary uploads folder
       }
       console.error("Error saving audio:", error);
       res.status(500).json({ error: "Failed to update audio", details: error.message });
     }
   })
 );
+
 
 
 
@@ -171,6 +177,9 @@ AudioBookRoute.put(
         }
 
         audioBook.audioImage = imageResult.secure_url;
+
+        // Delete the image file from the temporary uploads folder
+        fs.unlinkSync(req.file.path);
       } catch (error) {
         // Error occurred while uploading the new image file
         console.error("Error uploading file:", error);
@@ -186,12 +195,15 @@ AudioBookRoute.put(
       if (req.file) {
         // Delete the newly uploaded image file if saving failed
         await cloudinary.uploader.destroy(audioBook.audioImage);
+        fs.unlinkSync(req.file.path); // Delete the image file from the temporary uploads folder
       }
       console.error("Error saving photo:", error);
       res.status(500).json({ error: "Failed to update photo", details: error.message });
     }
   })
 );
+
+
 
 
 AudioBookRoute.delete(
