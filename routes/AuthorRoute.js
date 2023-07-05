@@ -26,32 +26,41 @@ cloudinary.config({
   api_secret: process.env.API_SECRET 
 });
 
+
 AuthorRoute.post(
   "/author/create",
   verify,
   authAdmin,
   upload.single("AuthorImage"),
   asyncHandler(async (req, res) => {
-    const { AuthorName, AuthorLocation, AuthorEmail, AuthorPhoneNumber } =
-      req.body;
+    const { AuthorName, AuthorLocation, AuthorEmail, AuthorPhoneNumber } = req.body;
 
-    if ((!AuthorName || !AuthorLocation, !AuthorEmail || !AuthorPhoneNumber))
-      res.json({ msg: "An important field is missing! Please check." });
+    if (!AuthorName || !AuthorLocation || !AuthorEmail || !AuthorPhoneNumber) {
+      return res.json({ msg: "An important field is missing! Please check." });
+    }
 
+    try {
       const result = await cloudinary.uploader.upload(req.file.path);
 
+      // Delete the temporary file from the local server
+      fs.unlinkSync(req.file.path);
 
-    await Author.create({
-      AuthorName,
-      AuthorEmail,
-      AuthorLocation,
-      AuthorPhoneNumber,
-      AuthorImage: result.secure_url
-    });
+      await Author.create({
+        AuthorName,
+        AuthorEmail,
+        AuthorLocation,
+        AuthorPhoneNumber,
+        AuthorImage: result.secure_url,
+      });
 
-    res.json({ msg: "Account has been successfully created." });
+      res.json({ msg: "Account has been successfully created." });
+    } catch (error) {
+      console.error("Error creating author:", error);
+      res.status(500).json({ error: "Failed to create author" });
+    }
   })
 );
+
 
 
 AuthorRoute.put(
