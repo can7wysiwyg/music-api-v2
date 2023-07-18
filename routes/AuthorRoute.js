@@ -53,7 +53,7 @@ AuthorRoute.post(
         AuthorImage: result.secure_url,
       });
 
-      res.json({ msg: "Account has been successfully created." });
+      res.json({ msg: "author has been successfully created." });
     } catch (error) {
       console.error("Error creating author:", error);
       res.status(500).json({ error: "Failed to create author" });

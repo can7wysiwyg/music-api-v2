@@ -44,6 +44,9 @@ const AudioSchema = mongoose.Schema({
     released: {
        type: Date,
        required: true 
+    },
+    bookLink: {
+        type: String
     }
 }, {
     timestamps: true
