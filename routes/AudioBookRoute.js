@@ -103,12 +103,6 @@ AudioBookRoute.put('/audio/update_audio_only/:id', verify, authAdmin,  async (re
 
 
 
-
-
-
-
-
-
 AudioBookRoute.put("/audio/update_all/:id", verify, authAdmin, asyncHandler(async(req, res) => {
 
 const{id} = req.params
@@ -120,54 +114,41 @@ res.json({msg: "file has been updated"})
 }))
 
 
-AudioBookRoute.put(
-  "/audio/update_picture/:id",
-  verify,
-  authAdmin,
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
+AudioBookRoute.put('/image/update_image_only/:id', verify, authAdmin, async (req, res) => {
+  const { id } = req.params;
 
-    const audioBook = await AudioBook.findById(id);
-    if (!audioBook) {
-      return res.status(404).json({ error: "AudioBook not found" });
+  try {
+    const book = await AudioBook.findById(id);
+
+    if (!book) {
+      return res.status(404).json({ msg: 'Book not found.' });
     }
 
-    if (req.file) {
-      try {
-        // Upload the new image file to Cloudinary
-        const imageResult = await cloudinary.uploader.upload(req.file.path);
-
-        // Delete the previous image file if it exists
-        if (audioBook.audioImage) {
-          await cloudinary.uploader.destroy(audioBook.audioImage);
-        }
-
-        audioBook.audioImage = imageResult.secure_url;
-
-        // Delete the image file from the temporary uploads folder
-        fs.unlinkSync(req.file.path);
-      } catch (error) {
-        // Error occurred while uploading the new image file
-        console.error("Error uploading file:", error);
-        return res.status(500).json({ error: "Failed to upload image file", details: error.message });
-      }
+    if (book.audioImage) {
+      const publicId = book.audioImage.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(publicId);
     }
 
-    try {
-      await audioBook.save();
-      res.json({ msg: "Photo has been successfully updated" });
-    } catch (error) {
-      // Error occurred while saving the document
-      if (req.file) {
-        // Delete the newly uploaded image file if saving failed
-        await cloudinary.uploader.destroy(audioBook.audioImage);
-        fs.unlinkSync(req.file.path); // Delete the image file from the temporary uploads folder
-      }
-      console.error("Error saving photo:", error);
-      res.status(500).json({ error: "Failed to update photo", details: error.message });
+    if (!req.files || !req.files.audioImage) {
+      return res.status(400).json({ msg: 'No file uploaded.' });
     }
-  })
-);
+
+    const audioImage = req.files.audioImage;
+    const result = await cloudinary.uploader.upload(audioImage.tempFilePath);
+
+    book.audioImage = result.secure_url;
+    await book.save();
+
+    fs.unlinkSync(audioImage.tempFilePath);
+
+    res.json({ msg: 'Book image updated successfully.' });
+  } catch (error) {
+    console.error('Error updating image:', error);
+    res.status(500).json({ error: 'Failed to update image.' });
+  }
+});
+
+
 
 
 
