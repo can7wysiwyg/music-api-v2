@@ -83,7 +83,9 @@ AudioBookRoute.put('/audio/update_audio_only/:id', verify, authAdmin,  async (re
     }
 
     const audioBook = req.files.audioBook;
-    const result = await cloudinary.uploader.upload(audioBook.tempFilePath);
+    const result = await cloudinary.uploader.upload(audioBook.tempFilePath,  {
+      resource_type: 'auto', 
+    });
 
     book.audioBook = result.secure_url;
     await book.save();
