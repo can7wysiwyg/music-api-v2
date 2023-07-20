@@ -114,7 +114,7 @@ res.json({msg: "file has been updated"})
 }))
 
 
-AudioBookRoute.put('/image/update_image_only/:id', verify, authAdmin, async (req, res) => {
+AudioBookRoute.put('/audio/update_image_only/:id', verify, authAdmin, async (req, res) => {
   const { id } = req.params;
 
   try {
