@@ -3,21 +3,11 @@ const verify = require("../middleware/verify");
 const authAdmin = require("../middleware/authAdmin");
 const AudioBook = require("../models/AudioBookModel");
 const asyncHandler = require("express-async-handler");
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const cloudinary = require('cloudinary').v2;
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
-  },
-});
 
-const upload = multer({ storage });
 
 cloudinary.config({ 
   cloud_name: process.env.CLOUD_NAME, 
@@ -26,65 +16,61 @@ cloudinary.config({
 });
 
 
-AudioBookRoute.post(
-  "/audio/create_audio",
-  verify,
-  authAdmin,
-  upload.fields([
-    { name: "audioBook", maxCount: 1 },
-    { name: "audioImage", maxCount: 1 },
-  ]),
-  asyncHandler(async (req, res) => {
-    const { authorName, audioGenre, bookTitle, released, bookDescription } = req.body;
+AudioBookRoute.post('/audio/create_audio', verify, authAdmin, async (req, res) => {
+  const { authorName, audioGenre, bookTitle, released, bookDescription } = req.body;
 
-    const { audioBook, audioImage } = req.files;
+  if (!authorName || !audioGenre || !bookTitle || !released || !bookDescription) {
+    return res.status(400).json({ error: 'Field cannot be empty' });
+  }
 
-    if (!authorName || !audioGenre || !bookTitle || !released || !bookDescription) {
-      return res.status(400).json({ error: "Field cannot be empty" });
+  try {
+    if (!req.files || !req.files.audioBook || !req.files.audioImage) {
+      return res.status(400).json({ error: 'Please provide both audio and image files' });
     }
 
-    try {
-      // Upload the audio book file to Cloudinary
-      const audioBookResult = await cloudinary.uploader.upload(audioBook[0].path, {
-        resource_type: "auto", // Set resource type to "auto" to handle different file types
-      });
+    // Upload the audio book file to Cloudinary
+    const audioBookResult = await cloudinary.uploader.upload(req.files.audioBook.tempFilePath, {
+      resource_type: 'auto', // Set resource type to "auto" to handle different file types
+    });
 
-      // Upload the audio image file to Cloudinary
-      const audioImageResult = await cloudinary.uploader.upload(audioImage[0].path);
+    // Upload the audio image file to Cloudinary
+    const audioImageResult = await cloudinary.uploader.upload(req.files.audioImage.tempFilePath);
 
-      const audioK = new AudioBook({
-        authorName,
-        bookTitle,
-        audioGenre,
-        released,
-        bookDescription,
-        audioBook: audioBookResult.secure_url,
-        audioImage: audioImageResult.secure_url,
-      });
+    const audioK = new AudioBook({
+      authorName,
+      bookTitle,
+      audioGenre,
+      released,
+      bookDescription,
+      audioBook: audioBookResult.secure_url,
+      audioImage: audioImageResult.secure_url,
+    });
 
-      await audioK.save();
+    await audioK.save();
 
-      // Delete the audio and image files from the temporary uploads folder
-      fs.unlinkSync(audioBook[0].path);
-      fs.unlinkSync(audioImage[0].path);
+    // Delete the audio and image files from the temporary uploads folder
+    fs.unlinkSync(req.files.audioBook.tempFilePath);
+    fs.unlinkSync(req.files.audioImage.tempFilePath);
 
-      res.json({
-        msg: "Audio and image files uploaded successfully",
-        audio: audioK,
-      });
-    } catch (error) {
-      console.error("Error uploading files:", error);
-      res.status(500).json({ error: "Failed to upload files" });
-    }
-  })
-);
+    res.json({
+      msg: 'Audio and image files uploaded successfully',
+      audio: audioK,
+    });
+  } catch (error) {
+    console.error('Error uploading files:', error);
+    res.status(500).json({ error: 'Failed to upload files' });
+  }
+});
+
+
+
 
 
 AudioBookRoute.put(
   "/audio/update_audio_only/:id",
   verify,
   authAdmin,
-  upload.single("audioBook"),
+  
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 

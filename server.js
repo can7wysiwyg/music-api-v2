@@ -6,6 +6,7 @@ const port  = process.env.PORT || 5500
 const cookieParser = require('cookie-parser')
 const path = require('path')
 const cors = require('cors')
+const fileUpload = require('express-fileupload')
 const AdminAuthRoute = require('./routes/AdminAuthRoute')
 const AuthorRoute = require('./routes/AuthorRoute')
 const GenreRoute = require('./routes/GenreRoute')
@@ -29,6 +30,10 @@ db.once('open', function(){
   app.use(express.json({limit: '50mb'}))
   app.use(express.urlencoded({extended: true, limit: '50mb'}))
   app.use(cookieParser())
+  app.use(fileUpload({
+    useTempFiles: true
+}))
+  
 
   //routes
   app.use(AdminAuthRoute)
