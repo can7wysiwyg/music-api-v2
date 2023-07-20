@@ -3,21 +3,9 @@ const asyncHandler = require("express-async-handler");
 const Author = require("../models/AuthorModel");
 const verify = require("../middleware/verify");
 const authAdmin = require("../middleware/authAdmin");
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
-const cloudinary = require('cloudinary')
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./uploads/");
-  },
-  filename: function (req, file, cb) {
-    cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
-  },
-});
-
-const upload = multer({ storage });
+const cloudinary = require('cloudinary').v2
 
 
 cloudinary.config({ 
@@ -31,29 +19,44 @@ AuthorRoute.post(
   "/author/create",
   verify,
   authAdmin,
-  upload.single("AuthorImage"),
   asyncHandler(async (req, res) => {
     const { AuthorName, AuthorLocation, AuthorEmail, AuthorPhoneNumber } = req.body;
 
     if (!AuthorName || !AuthorLocation || !AuthorEmail || !AuthorPhoneNumber) {
       return res.json({ msg: "An important field is missing! Please check." });
     }
+    if (!req.files || !req.files.AuthorImage) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
 
+    const file = req.files.AuthorImage;
     try {
-      const result = await cloudinary.uploader.upload(req.file.path);
 
-      // Delete the temporary file from the local server
-      fs.unlinkSync(req.file.path);
+      cloudinary.uploader.upload(file.tempFilePath, {
+        folder: 'testImage',
+        width: 150,
+        height: 150,
+        crop: "fill"
+      }, async (err, result) => {
+        if (err) throw err;
+    
+        removeTmp(file.tempFilePath);
 
-      await Author.create({
-        AuthorName,
-        AuthorEmail,
-        AuthorLocation,
-        AuthorPhoneNumber,
-        AuthorImage: result.secure_url,
+
+        await Author.create({
+          AuthorName,
+          AuthorEmail,
+          AuthorLocation,
+          AuthorPhoneNumber,
+          AuthorImage: result.secure_url,
+        });
+
+        res.json({ msg: "author has been successfully created." });
+  
+
       });
 
-      res.json({ msg: "author has been successfully created." });
+     
     } catch (error) {
       console.error("Error creating author:", error);
       res.status(500).json({ error: "Failed to create author" });
@@ -81,36 +84,39 @@ AuthorRoute.put(
   "/author/update_profilePic/:id",
   verify,
   authAdmin,
-  upload.single("AuthorImage"),
   asyncHandler(async (req, res) => {
+  
     const { id } = req.params;
 
-    // Find the author in the database
-    const author = await Author.findById(id);
+      const author = await Author.findById(id);
 
-    // Check if the author exists
-    if (!author) {
-      return res.status(404).json({ msg: "Author not found." });
-    }
+      if (!author) {
+        return res.status(404).json({ msg: "Book not found." });
+      }
 
-    // Delete the old image from Cloudinary if it exists
-    if (author.AuthorImage) {
-      const publicId = author.AuthorImage.split("/").pop().split(".")[0];
-      await cloudinary.uploader.destroy(publicId);
-    }
+      if (author.AuthorImage) {
+        const publicId = book.bookImage.split("/").pop().split(".")[0];
+        await cloudinary.uploader.destroy(publicId);
+      }
 
-    // Upload the new image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.path);
+      if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).json({ msg: "No file uploaded." });
+      }
 
-    // Update the author's profile picture in the database
-    author.AuthorImage = result.secure_url; // Save the new image URL in the database
+      const AuthorImage = req.files.AuthorImage;
 
-    await author.save();
+      const result = await cloudinary.uploader.upload(AuthorImage.tempFilePath);
 
-    // Delete the image file from the temporary uploads folder
-    fs.unlinkSync(req.file.path);
+      author.AuthorImage = result.secure_url;
 
-    res.json({ msg: "Profile picture updated successfully." });
+      await author.save();
+
+      fs.unlinkSync(AuthorImage.tempFilePath);
+
+      res.json({ msg: "picture updated successfully." });
+
+
+    
   })
 );
 
@@ -146,3 +152,10 @@ AuthorRoute.get('/author/show_single/:id', asyncHandler(async(req, res) => {
 }))
 
 module.exports = AuthorRoute;
+
+
+function removeTmp(filePath) {
+  fs.unlink(filePath, err => {
+    if (err) throw err;
+  });
+}
