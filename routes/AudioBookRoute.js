@@ -74,52 +74,36 @@ AudioBookRoute.put(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
-    const audioBook = await AudioBook.findById(id);
-    if (!audioBook) {
-      return res.status(404).json({ error: "AudioBook not found" });
+    const book = await AudioBook.findById(id);
+
+    if (!book) {
+      return res.status(404).json({ msg: "Book not found." });
     }
 
-    if (req.file) {
-      try {
-        // Upload the new audio file to Cloudinary
-        const audioBookResult = await cloudinary.uploader.upload(req.file.path, {
-          resource_type: "auto", // Set resource type to "auto" to handle different file types
-        });
-
-        // Delete the previous audio file if it exists
-        if (audioBook.audioBook) {
-          await cloudinary.uploader.destroy(audioBook.audioBook);
-        }
-
-        audioBook.audioBook = audioBookResult.secure_url;
-
-        // Delete the audio file from the temporary uploads folder
-        fs.unlinkSync(req.file.path);
-      } catch (error) {
-        // Error occurred while uploading the new audio file
-        console.error("Error uploading file:", error);
-        return res.status(500).json({ error: "Failed to upload audio file", details: error.message });
-      }
+    if (book.audioBook) {
+      const publicId = book.audioBook.split("/").pop().split(".")[0];
+      await cloudinary.uploader.destroy(publicId);
     }
 
-    // Ensure that audioImage.imageLink is provided in the request body
-    if (req.body.audioImage && req.body.audioImage.imageLink) {
-      audioBook.audioImage = req.body.audioImage.imageLink;
+    if (!req.files || Object.keys(req.files).length === 0) {
+      return res.status(400).json({ msg: "No file uploaded." });
     }
 
-    try {
-      await audioBook.save();
-      res.json({ msg: "Successfully updated" });
-    } catch (error) {
-      // Error occurred while saving the document
-      if (req.file) {
-        // Delete the newly uploaded audio file if saving failed
-        await cloudinary.uploader.destroy(audioBook.audioBook);
-        fs.unlinkSync(req.file.path); // Delete the audio file from the temporary uploads folder
-      }
-      console.error("Error saving audio:", error);
-      res.status(500).json({ error: "Failed to update audio", details: error.message });
-    }
+    const audioBook = req.files.audioBook;
+
+    const result = await cloudinary.uploader.upload(audioBook.tempFilePath);
+
+    book.audioBook = result.secure_url;
+
+    await book.save();
+
+    fs.unlinkSync(audioBook.tempFilePath);
+
+    res.json({ msg: "Book audio updated successfully." });
+
+
+
+    
   })
 );
 
