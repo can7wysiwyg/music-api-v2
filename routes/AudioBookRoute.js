@@ -143,7 +143,6 @@ AudioBookRoute.put(
   "/audio/update_picture/:id",
   verify,
   authAdmin,
-  upload.single("audioImage"),
   asyncHandler(async (req, res) => {
     const { id } = req.params;
 
