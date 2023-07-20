@@ -63,49 +63,44 @@ AudioBookRoute.post('/audio/create_audio', verify, authAdmin, async (req, res) =
 });
 
 
+app.put('/audio/update_audio_only/:id', verify, authAdmin, fileUpload(), async (req, res) => {
+  const { id } = req.params;
 
-
-
-AudioBookRoute.put(
-  "/audio/update_audio_only/:id",
-  verify,
-  authAdmin,
-  
-  asyncHandler(async (req, res) => {
-    const { id } = req.params;
-
+  try {
     const book = await AudioBook.findById(id);
 
     if (!book) {
-      return res.status(404).json({ msg: "Book not found." });
+      return res.status(404).json({ msg: 'Book not found.' });
     }
 
     if (book.audioBook) {
-      const publicId = book.audioBook.split("/").pop().split(".")[0];
+      const publicId = book.audioBook.split('/').pop().split('.')[0];
       await cloudinary.uploader.destroy(publicId);
     }
 
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res.status(400).json({ msg: "No file uploaded." });
+    if (!req.files || !req.files.audioBook) {
+      return res.status(400).json({ msg: 'No file uploaded.' });
     }
 
     const audioBook = req.files.audioBook;
-
     const result = await cloudinary.uploader.upload(audioBook.tempFilePath);
 
     book.audioBook = result.secure_url;
-
     await book.save();
 
     fs.unlinkSync(audioBook.tempFilePath);
 
-    res.json({ msg: "Book audio updated successfully." });
+    res.json({ msg: 'Book audio updated successfully.' });
+  } catch (error) {
+    console.error('Error updating audio:', error);
+    res.status(500).json({ error: 'Failed to update audio.' });
+  }
+});
 
 
 
-    
-  })
-);
+
+
 
 
 
