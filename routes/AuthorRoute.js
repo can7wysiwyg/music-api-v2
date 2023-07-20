@@ -88,34 +88,32 @@ AuthorRoute.put(
   
     const { id } = req.params;
 
-      const author = await Author.findById(id);
+    const author = await Author.findById(id);
 
-      if (!author) {
-        return res.status(404).json({ msg: "Book not found." });
-      }
+    if (!author) {
+      return res.status(404).json({ msg: 'Book not found.' });
+    }
 
-      if (author.AuthorImage) {
-        const publicId = book.bookImage.split("/").pop().split(".")[0];
-        await cloudinary.uploader.destroy(publicId);
-      }
+    if (author.AuthorImage) {
+      const publicId = author.AuthorImage.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(publicId);
+    }
 
-      if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).json({ msg: "No file uploaded." });
-      }
+    if (!req.files || !req.files.AuthorImage) {
+      return res.status(400).json({ msg: 'No file uploaded.' });
+    }
 
-      const AuthorImage = req.files.AuthorImage;
+    const AuthorImage = req.files.AuthorImage;
+    const result = await cloudinary.uploader.upload(AuthorImage.tempFilePath);
 
-      const result = await cloudinary.uploader.upload(AuthorImage.tempFilePath);
+    author.AuthorImage = result.secure_url;
+    await author.save();
 
-      author.AuthorImage = result.secure_url;
+    fs.unlinkSync(AuthorImage.tempFilePath);
 
-      await author.save();
+    res.json({ msg: 'Image updated successfully.' });
 
-      fs.unlinkSync(AuthorImage.tempFilePath);
-
-      res.json({ msg: "picture updated successfully." });
-
-
+      
     
   })
 );
