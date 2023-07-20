@@ -63,7 +63,7 @@ AudioBookRoute.post('/audio/create_audio', verify, authAdmin, async (req, res) =
 });
 
 
-app.put('/audio/update_audio_only/:id', verify, authAdmin, fileUpload(), async (req, res) => {
+AudioBookRoute.put('/audio/update_audio_only/:id', verify, authAdmin,  async (req, res) => {
   const { id } = req.params;
 
   try {
